@@ -12,6 +12,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v2
         with:
-          name: Juba-Shabah-Package
+          name: Juba-Shabah-App
           path: bin/*.apk
           
