@@ -5,13 +5,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Buildozer
-        uses: ArtemSerebriakov/buildozer-action@v1
+      - uses: ArtemSerebriakov/buildozer-action@v1
         with:
           command: android debug
-      - name: Upload
-        uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v2
         with:
-          name: Juba-Package
+          name: Juba-APK
           path: bin/*.apk
           
