@@ -10,6 +10,6 @@ jobs:
           command: android debug
       - uses: actions/upload-artifact@v2
         with:
-          name: Juba-APK
+          name: Juba-App
           path: bin/*.apk
           
