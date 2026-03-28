@@ -1,17 +1,15 @@
-name: Build Juba APK
+name: Build
 on: [push]
 jobs:
-  build:
+  juba_job:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Build with Buildozer
-        uses: ArtemSerebriakov/buildozer-action@v1
+      - uses: ArtemSerebriakov/buildozer-action@v1
         with:
           command: android debug
-      - name: Upload APK
-        uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v2
         with:
-          name: Juba-Shabah-App
+          name: Juba-APK
           path: bin/*.apk
           
