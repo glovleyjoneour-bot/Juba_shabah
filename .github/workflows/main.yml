@@ -1,4 +1,4 @@
-name: Juba Final Debug
+name: Juba APK Build with Icon
 on: push
 jobs:
   build:
@@ -6,26 +6,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Full Build Process
+      - name: Install System Dependencies
         run: |
           sudo apt update
           sudo apt install -y git zip unzip autoconf automake libtool pkg-config zlib1g-dev \
           libncurses5-dev libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev \
           build-essential openjdk-17-jdk-headless python3-pip
-          
           pip install --upgrade pip
           pip install "cython<3.0.0" buildozer 
 
+      - name: Prepare Buildozer Path
+        run: |
+          # تأكيد مسار الأدوات حتى ما تضيع بالسيرفر
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
           export APP_ANDROID_ACCEPT_SDK_LICENSE=1
-          # هنا التعديل: ضفت --verbose عشان يطبع لنا سبب العطل بالضبط
-          buildozer android debug --verbose
+
+      - name: Build with Buildozer
+        run: |
+          # تنظيف أي بقايا سابقة وبدء البناء الفعلي
+          buildozer android clean
+          buildozer android debug
         env:
           APP_ANDROID_ACCEPT_SDK_LICENSE: "1"
 
-      - name: Upload APK
-        if: always()
+      - name: Upload APK Artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: Juba-App-Package
+          name: Juba-App-Finished
           path: bin/*.apk
           
