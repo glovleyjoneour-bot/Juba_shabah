@@ -1,4 +1,4 @@
-name: Juba Final Build
+name: Juba Pure Build
 on: push
 jobs:
   build:
@@ -6,29 +6,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup System
+      - name: System Setup
         run: |
           sudo apt update
           sudo apt install -y git zip unzip autoconf automake libtool pkg-config zlib1g-dev \
           libncurses5-dev libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev \
-          build-essential openjdk-17-jdk-headless python3-pip
+          build-essential openjdk-17-jdk-headless python3-pip libltdl-dev
           pip install --upgrade pip
           pip install "cython<3.0.0" buildozer 
 
-      - name: Build APK (Clean Build)
+      - name: Fresh Build
         run: |
-          # مسح أي مخلفات قديمة تسبب الانهيار
           rm -rf .buildozer/
           export APP_ANDROID_ACCEPT_SDK_LICENSE=1
-          # أمر البناء الرسمي
           buildozer android debug
         env:
           APP_ANDROID_ACCEPT_SDK_LICENSE: "1"
 
-      - name: Upload APK
+      - name: Get APK
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Juba-Stegano-App
+          name: Juba-App
           path: bin/*.apk
           
