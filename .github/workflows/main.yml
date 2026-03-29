@@ -1,4 +1,4 @@
-name: Juba Nuclear Fix
+name: Juba Final Build
 on: push
 jobs:
   build:
@@ -6,12 +6,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Clean and Setup
+      - name: Setup System
         run: |
-          # مسح أي مخلفات قديمة قد تسبب الفشل السريع
-          rm -rf .buildozer/
-          rm -f buildozer.spec.bak
-          
           sudo apt update
           sudo apt install -y git zip unzip autoconf automake libtool pkg-config zlib1g-dev \
           libncurses5-dev libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev \
@@ -19,10 +15,12 @@ jobs:
           pip install --upgrade pip
           pip install "cython<3.0.0" buildozer 
 
-      - name: Force Fresh Build
+      - name: Build APK (Clean Build)
         run: |
+          # مسح أي مخلفات قديمة تسبب الانهيار
+          rm -rf .buildozer/
           export APP_ANDROID_ACCEPT_SDK_LICENSE=1
-          # بناء من الصفر تماماً بدون أي ذاكرة قديمة
+          # أمر البناء الرسمي
           buildozer android debug
         env:
           APP_ANDROID_ACCEPT_SDK_LICENSE: "1"
@@ -31,6 +29,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Juba-Final-App
+          name: Juba-Stegano-App
           path: bin/*.apk
           
