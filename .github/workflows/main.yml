@@ -1,4 +1,4 @@
-name: Juba APK Final Fix
+name: Juba Nuclear Fix
 on: push
 jobs:
   build:
@@ -6,8 +6,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: System Setup
+      - name: Clean and Setup
         run: |
+          # مسح أي مخلفات قديمة قد تسبب الفشل السريع
+          rm -rf .buildozer/
+          rm -f buildozer.spec.bak
+          
           sudo apt update
           sudo apt install -y git zip unzip autoconf automake libtool pkg-config zlib1g-dev \
           libncurses5-dev libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev \
@@ -15,19 +19,18 @@ jobs:
           pip install --upgrade pip
           pip install "cython<3.0.0" buildozer 
 
-      - name: Build APK
+      - name: Force Fresh Build
         run: |
           export APP_ANDROID_ACCEPT_SDK_LICENSE=1
-          # هذا السطر يصفر كل المشاكل القديمة بملف الـ spec
-          buildozer android clean
+          # بناء من الصفر تماماً بدون أي ذاكرة قديمة
           buildozer android debug
         env:
           APP_ANDROID_ACCEPT_SDK_LICENSE: "1"
 
-      - name: Upload Result
+      - name: Upload APK
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Juba-App
+          name: Juba-Final-App
           path: bin/*.apk
           
