@@ -1,6 +1,6 @@
 from kivymd.app import MDApp
 from kivymd.uix.screen import MDScreen
-from kivymd.uix.button import MDRaisedButton
+from kivymd.uix.button import MDRaisedButton, MDFillRoundFlatIconButton
 from kivymd.uix.textfield import MDTextField
 from kivymd.uix.label import MDLabel
 from kivy.uix.boxlayout import BoxLayout
@@ -10,139 +10,124 @@ from PIL import Image as PilImage
 import stepic
 import os
 
-class GhostUI(MDScreen):
+# مكتبة اختيار الملفات (تشتغل على الكمبيوتر والأندرويد)
+from plyer import filechooser
+
+class GhostV4(MDScreen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # واجهة عمودية رئيسية
-        main_layout = BoxLayout(orientation='vertical', padding=20, spacing=25)
+        self.selected_image_path = None
+        self.output_image_path = None
 
-        # --- القسم الأول: الشعار والعنوان (Header) ---
-        header_layout = BoxLayout(orientation='horizontal', size_hint=(1, 0.2))
-        
-        # اللوجو بالزاوية اليسرى العليا
-        logo_path = "icon.png" # تأكد من وجود الملف في مجلد المشروع
-        if os.path.exists(logo_path):
-            self.logo = KivyImage(
-                source=logo_path,
-                size_hint=(0.3, 1),
-                pos_hint={"center_y": .5}
-            )
-        else:
-            self.logo = MDLabel(text="👻", halign="center", font_style="H3", size_hint=(0.3, 1))
+        layout = BoxLayout(orientation='vertical', padding=20, spacing=15)
 
-        # عنوان التطبيق بجانب اللوجو
-        self.title = MDLabel(
-            text="GHOST\nSTEGANO",
-            halign="left",
-            font_style="H4",
-            theme_text_color="Primary",
-            size_hint=(0.7, 1),
-            pos_hint={"center_y": .5}
+        # Header مع اللوجو
+        header = BoxLayout(orientation='horizontal', size_hint=(1, 0.15))
+        if os.path.exists("icon.png"):
+            header.add_widget(KivyImage(source="icon.png", size_hint=(0.2, 1)))
+        header.add_widget(MDLabel(text="GHOST PRO", font_style="H5", halign="left"))
+        layout.add_widget(header)
+
+        # عرض الصورة المختارة (لوحة المعاينة)
+        self.preview_img = KivyImage(
+            source='icon.png' if os.path.exists('icon.png') else '',
+            size_hint=(1, 0.4),
+            allow_stretch=True
         )
+        layout.add_widget(self.preview_img)
 
-        header_layout.add_widget(self.logo)
-        header_layout.add_widget(self.title)
-
-        # --- القسم الثاني: إدخال البيانات (Input) ---
-        input_layout = BoxLayout(orientation='vertical', spacing=15)
-        
-        # حقل الرسالة السرية (أكثر تفصيلاً)
-        self.secret_msg = MDTextField(
-            hint_text="Type your secure message...",
-            helper_text="Use English characters only",
-            helper_text_mode="on_focus",
+        # حقل الرسالة
+        self.secret_input = MDTextField(
+            hint_text="Enter Secret Message",
             mode="rectangle",
-            icon_right="key-variant",
             size_hint=(1, None)
         )
+        layout.add_widget(self.secret_input)
 
-        # حقل اسم الصورة (الموجودة في الداونلود)
-        self.image_name = MDTextField(
-            hint_text="Source image name (e.g. icon.png)",
-            helper_text="Make sure file is in Downloads folder",
-            helper_text_mode="on_persistent",
-            mode="rectangle",
-            icon_right="folder-image",
-            size_hint=(1, None)
+        # أزرار التحكم
+        buttons_layout = BoxLayout(orientation='horizontal', spacing=10, size_hint=(1, 0.1))
+        
+        btn_select = MDFillRoundFlatIconButton(
+            icon="image-plus",
+            text="SELECT IMAGE",
+            on_release=self.open_gallery
         )
+        
+        btn_process = MDFillRoundFlatIconButton(
+            icon="lock-check",
+            text="HIDE & PREVIEW",
+            on_release=self.process_steganography
+        )
+        
+        buttons_layout.add_widget(btn_select)
+        buttons_layout.add_widget(btn_process)
+        layout.add_widget(buttons_layout)
 
-        input_layout.add_widget(self.secret_msg)
-        input_layout.add_widget(self.image_name)
-
-        # --- القسم الثالث: التحكم والحالة (Control) ---
-        control_layout = BoxLayout(orientation='vertical', spacing=20, size_hint=(1, 0.4))
-
-        # أزرار الإخفاء والاستخراج (بتفاصيل أكثر)
-        btn_hide = MDRaisedButton(
-            text="🔒 HIDE MESSAGE & SAVE",
+        # زر الحفظ النهائي (يظهر بعد المعالجة)
+        self.btn_download = MDRaisedButton(
+            text="DOWNLOAD TO GALLERY",
             size_hint=(1, None),
-            md_bg_color=(103/255, 58/255, 183/255, 1), # DeepPurple
-            on_release=self.process_hide
+            disabled=True,
+            on_release=self.save_to_gallery
         )
+        layout.add_widget(self.btn_download)
 
-        btn_show = MDRaisedButton(
-            text="🔓 EXTRACT MESSAGE",
-            size_hint=(1, None),
-            on_release=self.process_extract
-        )
+        self.status = MDLabel(text="Select an image to start", halign="center", theme_text_color="Hint")
+        layout.add_widget(self.status)
 
-        # نص الحالة بالأسفل (مرتب)
-        self.status = MDLabel(
-            text="Status: GHOST ACTIVE",
-            halign="center",
-            theme_text_color="Secondary",
-            size_hint=(1, None)
-        )
+        self.add_widget(layout)
 
-        control_layout.add_widget(btn_hide)
-        control_layout.add_widget(btn_show)
-        control_layout.add_widget(self.status)
+    def open_gallery(self, *args):
+        filechooser.open_file(on_selection=self.on_file_selected)
 
-        # إضافة جميع الأقسام للواجهة الرئيسية
-        main_layout.add_widget(header_layout)
-        main_layout.add_widget(input_layout)
-        main_layout.add_widget(control_layout)
-        self.add_widget(main_layout)
+    def on_file_selected(self, selection):
+        if selection:
+            self.selected_image_path = selection[0]
+            self.preview_img.source = self.selected_image_path
+            self.status.text = "Image Selected!"
 
-    def get_path(self, filename):
-        if platform == 'android':
-            return f"/sdcard/Download/{filename}"
-        return filename
+    def process_steganography(self, instance):
+        if not self.selected_image_path or not self.secret_input.text:
+            self.status.text = "Please select image and type message!"
+            return
 
-    def process_hide(self, instance):
         try:
-            in_file = self.get_path(self.image_name.text)
-            if not os.path.exists(in_file):
-                self.status.text = "Error: File not found in Downloads!"
-                return
+            img = PilImage.open(self.selected_image_path)
+            message = self.secret_input.text.encode('utf-8')
+            new_img = stepic.encode(img, message)
             
-            img = PilImage.open(in_file)
-            data = self.secret_msg.text.encode('utf-8')
-            new_img = stepic.encode(img, data)
+            # حفظ مؤقت للعرض داخل التطبيق
+            temp_path = os.path.join(os.getcwd(), "temp_preview.png")
+            new_img.save(temp_path, "PNG")
             
-            out_file = self.get_path("ghost_output.png")
-            new_img.save(out_file, "PNG")
-            self.status.text = "Success! Saved as ghost_output.png"
+            self.output_image_path = temp_path
+            self.preview_img.source = temp_path
+            self.preview_img.reload() # تحديث الصورة في الواجهة
+            
+            self.btn_download.disabled = False
+            self.status.text = "Message Hidden! Tap Download below."
         except Exception as e:
-            self.status.text = "Error: Permission Denied"
+            self.status.text = f"Error: {str(e)[:20]}"
 
-    def process_extract(self, instance):
+    def save_to_gallery(self, instance):
         try:
-            in_file = self.get_path(self.image_name.text)
-            img = PilImage.open(in_file)
-            decoded = stepic.decode(img)
-            if isinstance(decoded, bytes):
-                decoded = decoded.decode('utf-8')
-            self.status.text = f"Msg: {decoded}"
+            if platform == 'android':
+                dest = "/sdcard/Download/Ghost_Secret.png"
+            else:
+                dest = "Ghost_Secret.png"
+            
+            img = PilImage.open(self.output_image_path)
+            img.save(dest, "PNG")
+            self.status.text = f"Saved in Downloads as Ghost_Secret"
         except:
-            self.status.text = "No hidden data found"
+            self.status.text = "Save Failed! Check Permissions."
 
 class GhostApp(MDApp):
     def build(self):
         self.theme_cls.theme_style = "Dark"
         self.theme_cls.primary_palette = "DeepPurple"
-        return GhostUI()
+        return GhostV4()
 
 if __name__ == "__main__":
     GhostApp().run()
-    
+            
