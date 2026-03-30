@@ -1,8 +1,15 @@
 name: Juba Pure Build
-on: push
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -11,12 +18,14 @@ jobs:
           sudo apt update
           sudo apt install -y git zip unzip autoconf automake libtool pkg-config zlib1g-dev \
           libncurses5-dev libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev \
-          build-essential openjdk-17-jdk-headless python3-pip libltdl-dev
+          build-essential openjdk-17-jdk-headless python3-pip libltdl-dev \
+          libgstreamer1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good
           pip install --upgrade pip
-          pip install "cython<3.0.0" buildozer 
+          pip install "cython<3.0.0" buildozer
 
       - name: Fresh Build
         run: |
+          # تنظيف أي ملفات بناء قديمة لضمان نسخة جديدة 100%
           rm -rf .buildozer/
           export APP_ANDROID_ACCEPT_SDK_LICENSE=1
           buildozer android debug
@@ -27,6 +36,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Juba-App
+          name: Juba-App-Ghost
           path: bin/*.apk
           
