@@ -1,6 +1,6 @@
 from kivymd.app import MDApp
 from kivymd.uix.screen import MDScreen
-from kivymd.uix.button import MDFillRoundFlatIconButton, MDRaisedButton
+from kivymd.uix.button import MDFillRoundFlatIconButton
 from kivymd.uix.textfield import MDTextField
 from kivymd.uix.label import MDLabel
 from kivy.uix.boxlayout import BoxLayout
@@ -9,8 +9,8 @@ from kivy.utils import platform
 from kivy.clock import Clock
 import os
 
-# وظيفة طلب الأذونات - حجر الزاوية لمنع الكراش
-def request_android_permissions():
+# طلب أذونات النظام لضمان التوافق مع Xiaomi/Samsung
+def ask_permissions():
     if platform == 'android':
         from android.permissions import request_permissions, Permission
         request_permissions([
@@ -19,85 +19,80 @@ def request_android_permissions():
             Permission.MANAGE_EXTERNAL_STORAGE
         ])
 
-class GhostFinalUI(MDScreen):
+class GhostProUI(MDScreen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.selected_path = None
-        self.temp_file = "output_ghost.png"
-        
-        # طلب الأذونات بعد ثانية من فتح الواجهة
-        Clock.schedule_once(lambda dt: request_android_permissions(), 1)
+        Clock.schedule_once(lambda dt: ask_permissions(), 1)
         
         layout = BoxLayout(orientation='vertical', padding=20, spacing=15)
 
-        # Header v5
-        header = BoxLayout(orientation='horizontal', size_hint=(1, 0.12))
-        header.add_widget(MDLabel(text="GHOST PRO v5", font_style="H5", bold=True))
+        # Header (Logo + Title)
+        header = BoxLayout(orientation='horizontal', size_hint=(1, 0.15))
+        header.add_widget(KivyImage(source='icon.png', size_hint=(0.3, 1)))
+        header.add_widget(MDLabel(text="GHOST PRO v5", font_style="H4", bold=True, halign="center"))
         layout.add_widget(header)
 
-        # Image Preview
-        self.img_preview = KivyImage(source='', size_hint=(1, 0.45))
+        # Preview
+        self.img_preview = KivyImage(source='', size_hint=(1, 0.5))
         layout.add_widget(self.img_preview)
 
-        # Input Field
-        self.msg_field = MDTextField(hint_text="Enter Message", mode="rectangle", size_hint=(1, None))
-        layout.add_widget(self.msg_field)
+        # Input
+        self.msg_input = MDTextField(hint_text="Enter Secret Message", mode="rectangle", size_hint=(1, None), height="50dp")
+        layout.add_widget(self.msg_input)
 
-        # Action Buttons
-        btns = BoxLayout(spacing=10, size_hint=(1, 0.1))
-        btns.add_widget(MDFillRoundFlatIconButton(icon="image-plus", text="SELECT", on_release=self.select_image))
-        btns.add_widget(MDFillRoundFlatIconButton(icon="lock", text="HIDE", on_release=self.hide_data))
-        btns.add_widget(MDFillRoundFlatIconButton(icon="eye", text="EXTRACT", on_release=self.extract_data))
+        # Buttons
+        btns = BoxLayout(orientation='horizontal', spacing=10, size_hint=(1, 0.1))
+        btns.add_widget(MDFillRoundFlatIconButton(icon="image-plus", text="SELECT", on_release=self.open_gallery))
+        btns.add_widget(MDFillRoundFlatIconButton(icon="lock", text="HIDE", on_release=self.hide_message))
+        btns.add_widget(MDFillRoundFlatIconButton(icon="eye", text="EXTRACT", on_release=self.extract_message))
         layout.add_widget(btns)
 
-        self.status = MDLabel(text="Status: Secured", halign="center")
+        self.status = MDLabel(text="Status: Ready", halign="center", theme_text_color="Hint")
         layout.add_widget(self.status)
         self.add_widget(layout)
 
-    def select_image(self, *args):
+    def open_gallery(self, *args):
         try:
             from plyer import filechooser
             filechooser.open_file(on_selection=self.on_selection)
-        except Exception as e:
-            self.status.text = "Gallery Error"
+        except: self.status.text = "Gallery Error"
 
     def on_selection(self, selection):
         if selection:
             self.selected_path = selection[0]
             self.img_preview.source = self.selected_path
-            self.status.text = "Image Selected"
+            self.status.text = "Image Loaded"
 
-    def hide_data(self, *args):
-        if not self.selected_path:
-            self.status.text = "Select Image First!"
-            return
+    def hide_message(self, *args):
+        if not self.selected_path: return
         try:
             from PIL import Image
             import stepic
             img = Image.open(self.selected_path)
-            encoded = stepic.encode(img, self.msg_field.text.encode('utf-8'))
-            encoded.save(self.temp_file, "PNG")
-            self.status.text = "Encoded & Ready"
-        except Exception as e:
-            self.status.text = f"Hide Error: {str(e)[:10]}"
+            new_img = stepic.encode(img, self.msg_input.text.encode('utf-8'))
+            path = "/sdcard/Download/ghost_hidden.png" if platform == 'android' else "ghost_hidden.png"
+            new_img.save(path, "PNG")
+            self.status.text = "Saved to Downloads"
+        except Exception as e: self.status.text = f"Error: {str(e)[:15]}"
 
-    def extract_data(self, *args):
+    def extract_message(self, *args):
         if not self.selected_path: return
         try:
             from PIL import Image
             import stepic
             img = Image.open(self.selected_path)
             decoded = stepic.decode(img)
-            self.msg_field.text = decoded if isinstance(decoded, str) else decoded.decode('utf-8')
+            self.msg_input.text = decoded if isinstance(decoded, str) else decoded.decode('utf-8')
             self.status.text = "Extracted"
-        except:
-            self.status.text = "No Data Found"
+        except: self.status.text = "No message found"
 
+# هذا هو الجزء الذي ظهر في الصورة الأخيرة (1000016646)
 class GhostApp(MDApp):
     def build(self):
         self.theme_cls.theme_style = "Dark"
-        self.theme_cls.primary_palette = "DeepPurple"
-        return GhostFinalUI()
+        self.theme_cls.primary_palette = "BlueGray" # كما في كودك الأصلي
+        return GhostProUI()
 
 if __name__ == "__main__":
     GhostApp().run()
