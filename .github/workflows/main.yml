@@ -1,55 +1,39 @@
-name: Build GHOST PRO v5
+name: Juba Pure Build
+
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
+  workflow_dispatch: # أضفت هذا الخيار لتشغيل البناء يدوياً إذا أردت
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Server
-        uses: actions/checkout@v4 # تحديث لـ v4 لتجنب تحذيرات Node.js
+      - uses: actions/checkout@v4
 
-      - name: Setup Python Environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install System Dependencies
+      - name: System Setup
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            libsqlite3-dev \
-            sqlite3 \
-            bzip2 \
-            libbz2-dev \
-            zlib1g-dev \
-            libssl-dev \
-            openssl \
-            libgdbm-dev \
-            libgdbm-compat-dev \
-            liblzma-dev \
-            libreadline-dev \
-            libncursesw5-dev \
-            libffi-dev \
-            uuid-dev \
-            libffi7
-
-      - name: Install Buildozer & Dependencies
-        run: |
+          sudo apt update
+          sudo apt install -y git zip unzip autoconf automake libtool pkg-config zlib1g-dev \
+          libncurses5-dev libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev \
+          build-essential openjdk-17-jdk-headless python3-pip libltdl-dev \
+          libgstreamer1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good
           pip install --upgrade pip
-          pip install buildozer cython==0.29.33 git+https://github.com/kivy/buildozer.git
+          pip install "cython<3.0.0" buildozer
 
-      - name: Build with Buildozer
-        run: yes | buildozer -v android debug
-        continue-on-error: false
+      - name: Fresh Build
+        run: |
+          rm -rf .buildozer/
+          # قبول التراخيص أوتوماتيكياً
+          yes | buildozer -v android debug
+        env:
+          APP_ANDROID_ACCEPT_SDK_LICENSE: "1"
 
-      - name: Upload APK Artifact
+      - name: Get APK
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Ghost_Pro_v5_Package
+          name: Juba-App-Ghost
           path: bin/*.apk
           
