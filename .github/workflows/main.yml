@@ -5,7 +5,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch: # ميزة إضافية لتشغيل البناء يدوياً من GitHub Actions
+  workflow_dispatch: # للسماح لك بتشغيل البناء يدوياً من واجهة GitHub
 
 jobs:
   build:
@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4 # تحديث لـ v4 لتفادي تحذيرات Node.js 16/20
+        uses: actions/checkout@v4 # التحديث لـ v4 يمنع تحذيرات Node.js
 
       - name: System Setup
         run: |
@@ -23,23 +23,23 @@ jobs:
           build-essential openjdk-17-jdk-headless python3-pip libltdl-dev \
           libgstreamer1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good
           
-          # تثبيت الأدوات بنسخ مستقرة
+          # تثبيت الأدوات بنسخ مستقرة لضمان عدم حدوث تعارضات
           pip install --upgrade pip
           pip install "cython<3.0.0" buildozer wheel
 
       - name: Fresh Build
         run: |
-          # تنظيف شامل لضمان عدم تداخل الملفات القديمة
+          # تنظيف الملفات القديمة لضمان بناء "نقي" 100%
           rm -rf .buildozer/
           
-          # إجبار النظام على قبول تراخيص Android SDK أوتوماتيكياً (الحل النهائي)
+          # إجبار النظام على قبول تراخيص Android SDK أوتوماتيكياً (هذا أهم تعديل)
           export APP_ANDROID_ACCEPT_SDK_LICENSE=1
           yes | buildozer -v android debug
         env:
           APP_ANDROID_ACCEPT_SDK_LICENSE: "1"
 
       - name: Get APK
-        if: always() # يضمن رفع الملف حتى لو حدث خطأ بسيط في الخطوات السابقة
+        if: always() # لضمان رفع الملف حتى لو واجه البناء مشكلة بسيطة في النهاية
         uses: actions/upload-artifact@v4
         with:
           name: Juba-App-Ghost-Final
