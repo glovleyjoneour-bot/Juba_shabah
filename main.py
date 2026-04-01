@@ -9,26 +9,30 @@ from kivy.utils import platform
 from kivy.clock import Clock
 import os
 
-# طلب أذونات النظام لضمان التوافق مع Xiaomi/Samsung
+# وظيفة طلب الأذونات الرسمية لأجهزة 2099
 def ask_permissions():
     if platform == 'android':
-        from android.permissions import request_permissions, Permission
-        request_permissions([
-            Permission.READ_EXTERNAL_STORAGE,
-            Permission.WRITE_EXTERNAL_STORAGE,
-            Permission.MANAGE_EXTERNAL_STORAGE
-        ])
+        try:
+            from android.permissions import request_permissions, Permission
+            request_permissions([
+                Permission.READ_EXTERNAL_STORAGE,
+                Permission.WRITE_EXTERNAL_STORAGE,
+                Permission.MANAGE_EXTERNAL_STORAGE
+            ])
+        except Exception as e:
+            print(f"PERMISSION_GATE_ERROR: {e}")
 
 class GhostProUI(MDScreen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.selected_path = None
-        Clock.schedule_once(lambda dt: ask_permissions(), 1)
         
+        # الواجهة الأصلية v5 كما في صورك
         layout = BoxLayout(orientation='vertical', padding=20, spacing=15)
 
         # Header (Logo + Title)
         header = BoxLayout(orientation='horizontal', size_hint=(1, 0.15))
+        # تأكد من وجود ملف icon.png في المشروع
         header.add_widget(KivyImage(source='icon.png', size_hint=(0.3, 1)))
         header.add_widget(MDLabel(text="GHOST PRO v5", font_style="H4", bold=True, halign="center"))
         layout.add_widget(header)
@@ -38,7 +42,12 @@ class GhostProUI(MDScreen):
         layout.add_widget(self.img_preview)
 
         # Input
-        self.msg_input = MDTextField(hint_text="Enter Secret Message", mode="rectangle", size_hint=(1, None), height="50dp")
+        self.msg_input = MDTextField(
+            hint_text="Enter Secret Message", 
+            mode="rectangle", 
+            size_hint=(1, None), 
+            height="50dp"
+        )
         layout.add_widget(self.msg_input)
 
         # Buttons
@@ -48,7 +57,7 @@ class GhostProUI(MDScreen):
         btns.add_widget(MDFillRoundFlatIconButton(icon="eye", text="EXTRACT", on_release=self.extract_message))
         layout.add_widget(btns)
 
-        self.status = MDLabel(text="Status: Ready", halign="center", theme_text_color="Hint")
+        self.status = MDLabel(text="Status: Secured", halign="center", theme_text_color="Hint")
         layout.add_widget(self.status)
         self.add_widget(layout)
 
@@ -65,16 +74,25 @@ class GhostProUI(MDScreen):
             self.status.text = "Image Loaded"
 
     def hide_message(self, *args):
-        if not self.selected_path: return
+        if not self.selected_path:
+            self.status.text = "Select Image First!"
+            return
         try:
             from PIL import Image
             import stepic
             img = Image.open(self.selected_path)
             new_img = stepic.encode(img, self.msg_input.text.encode('utf-8'))
-            path = "/sdcard/Download/ghost_hidden.png" if platform == 'android' else "ghost_hidden.png"
+            
+            # المسار الآمن للحفظ في أندرويد
+            if platform == 'android':
+                path = "/sdcard/Download/ghost_hidden.png"
+            else:
+                path = "ghost_hidden.png"
+                
             new_img.save(path, "PNG")
-            self.status.text = "Saved to Downloads"
-        except Exception as e: self.status.text = f"Error: {str(e)[:15]}"
+            self.status.text = "Saved in Downloads"
+        except Exception as e:
+            self.status.text = f"Error: {str(e)[:15]}"
 
     def extract_message(self, *args):
         if not self.selected_path: return
@@ -85,14 +103,18 @@ class GhostProUI(MDScreen):
             decoded = stepic.decode(img)
             self.msg_input.text = decoded if isinstance(decoded, str) else decoded.decode('utf-8')
             self.status.text = "Extracted"
-        except: self.status.text = "No message found"
+        except:
+            self.status.text = "No message found"
 
-# هذا هو الجزء الذي ظهر في الصورة الأخيرة (1000016646)
 class GhostApp(MDApp):
     def build(self):
         self.theme_cls.theme_style = "Dark"
-        self.theme_cls.primary_palette = "BlueGray" # كما في كودك الأصلي
+        self.theme_cls.primary_palette = "BlueGray"
         return GhostProUI()
+
+    # طلب الإذن فور تشغيل التطبيق لضمان عدم الكراش
+    def on_start(self):
+        Clock.schedule_once(lambda dt: ask_permissions(), 1)
 
 if __name__ == "__main__":
     GhostApp().run()
