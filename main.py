@@ -9,7 +9,7 @@ from kivy.utils import platform
 from kivy.clock import Clock
 import os
 
-# وظيفة طلب الأذونات الرسمية لأجهزة 2099
+# وظيفة طلب الأذونات لضمان التوافق مع الأنظمة الحديثة
 def ask_permissions():
     if platform == 'android':
         try:
@@ -20,28 +20,26 @@ def ask_permissions():
                 Permission.MANAGE_EXTERNAL_STORAGE
             ])
         except Exception as e:
-            print(f"PERMISSION_GATE_ERROR: {e}")
+            print(f"Permission Error: {e}")
 
 class GhostProUI(MDScreen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.selected_path = None
         
-        # الواجهة الأصلية v5 كما في صورك
         layout = BoxLayout(orientation='vertical', padding=20, spacing=15)
 
-        # Header (Logo + Title)
+        # Header (Logo + Title) كما في تصميمك
         header = BoxLayout(orientation='horizontal', size_hint=(1, 0.15))
-        # تأكد من وجود ملف icon.png في المشروع
         header.add_widget(KivyImage(source='icon.png', size_hint=(0.3, 1)))
         header.add_widget(MDLabel(text="GHOST PRO v5", font_style="H4", bold=True, halign="center"))
         layout.add_widget(header)
 
-        # Preview
+        # Preview - مربع عرض الصورة
         self.img_preview = KivyImage(source='', size_hint=(1, 0.5))
         layout.add_widget(self.img_preview)
 
-        # Input
+        # Input - حقل الرسالة
         self.msg_input = MDTextField(
             hint_text="Enter Secret Message", 
             mode="rectangle", 
@@ -50,49 +48,67 @@ class GhostProUI(MDScreen):
         )
         layout.add_widget(self.msg_input)
 
-        # Buttons
+        # Buttons - الأزرار الثلاثة
         btns = BoxLayout(orientation='horizontal', spacing=10, size_hint=(1, 0.1))
         btns.add_widget(MDFillRoundFlatIconButton(icon="image-plus", text="SELECT", on_release=self.open_gallery))
         btns.add_widget(MDFillRoundFlatIconButton(icon="lock", text="HIDE", on_release=self.hide_message))
         btns.add_widget(MDFillRoundFlatIconButton(icon="eye", text="EXTRACT", on_release=self.extract_message))
         layout.add_widget(btns)
 
-        self.status = MDLabel(text="Status: Secured", halign="center", theme_text_color="Hint")
+        # Status - حالة النظام
+        self.status = MDLabel(text="Status: Ready", halign="center", theme_text_color="Hint")
         layout.add_widget(self.status)
+        
         self.add_widget(layout)
 
     def open_gallery(self, *args):
         try:
             from plyer import filechooser
             filechooser.open_file(on_selection=self.on_selection)
-        except: self.status.text = "Gallery Error"
+        except:
+            self.status.text = "Gallery Error"
 
     def on_selection(self, selection):
-        if selection:
-            self.selected_path = selection[0]
-            self.img_preview.source = self.selected_path
-            self.status.text = "Image Loaded"
+        if selection and len(selection) > 0:
+            path = selection[0]
+            # تنظيف المسار للأندرويد (إزالة file:// إذا وجدت)
+            if path.startswith('file://'):
+                path = path[7:]
+            
+            self.selected_path = path
+            # تحديث الواجهة فوراً
+            Clock.schedule_once(lambda dt: self._refresh_image(path), 0)
+
+    def _refresh_image(self, path):
+        self.img_preview.source = path
+        self.img_preview.reload() # إجبار التطبيق على عرض الصورة الجديدة
+        self.status.text = "Image Selected Successfully"
 
     def hide_message(self, *args):
         if not self.selected_path:
-            self.status.text = "Select Image First!"
+            self.status.text = "Select an image first!"
             return
         try:
             from PIL import Image
             import stepic
-            img = Image.open(self.selected_path)
-            new_img = stepic.encode(img, self.msg_input.text.encode('utf-8'))
             
-            # المسار الآمن للحفظ في أندرويد
+            img = Image.open(self.selected_path)
+            # تحويل التنسيق لضمان عمل الإخفاء على أي صورة
+            img = img.convert('RGB') 
+            
+            message = self.msg_input.text.encode('utf-8')
+            new_img = stepic.encode(img, message)
+            
+            # مسار الحفظ في التنزيلات
             if platform == 'android':
                 path = "/sdcard/Download/ghost_hidden.png"
             else:
                 path = "ghost_hidden.png"
                 
             new_img.save(path, "PNG")
-            self.status.text = "Saved in Downloads"
+            self.status.text = "Success! Saved in Downloads"
         except Exception as e:
-            self.status.text = f"Error: {str(e)[:15]}"
+            self.status.text = f"Error: Process Failed"
 
     def extract_message(self, *args):
         if not self.selected_path: return
@@ -102,9 +118,9 @@ class GhostProUI(MDScreen):
             img = Image.open(self.selected_path)
             decoded = stepic.decode(img)
             self.msg_input.text = decoded if isinstance(decoded, str) else decoded.decode('utf-8')
-            self.status.text = "Extracted"
+            self.status.text = "Message Extracted"
         except:
-            self.status.text = "No message found"
+            self.status.text = "No hidden message found"
 
 class GhostApp(MDApp):
     def build(self):
@@ -112,8 +128,8 @@ class GhostApp(MDApp):
         self.theme_cls.primary_palette = "BlueGray"
         return GhostProUI()
 
-    # طلب الإذن فور تشغيل التطبيق لضمان عدم الكراش
     def on_start(self):
+        # طلب الأذونات بعد ثانية واحدة من تشغيل الواجهة
         Clock.schedule_once(lambda dt: ask_permissions(), 1)
 
 if __name__ == "__main__":
