@@ -12,15 +12,15 @@ package.domain = org.juba
 # (str) Source code where the main.py lives
 source.dir = .
 
-# (list) Source files to include (تأكد من وجود أيقونة باسم icon.png)
+# (list) Source files to include
 source.include_exts = py,png,jpg,kv,atlas
 
 # (str) Version of your application
 version = 0.1
 
 # (list) Application requirements
-# ملاحظة: تم إضافة pyjnius و android لتمكين نظام الأذونات من العمل
-requirements = python3,kivy==2.2.1,kivymd==1.1.1,pillow,stepic,plyer,setuptools,android,pyjnius
+# تم إضافة six و pyjnius لضمان عمل الأذونات وكتبة stepic بدون مشاكل
+requirements = python3,kivy==2.2.1,kivymd==1.1.1,pillow,stepic,plyer,setuptools,android,pyjnius,six
 
 # (str) Icon of the application
 icon.filename = icon.png
@@ -29,17 +29,18 @@ icon.filename = icon.png
 orientation = portrait
 
 # (list) Permissions
-# الأذونات الكاملة للوصول للصور في الأنظمة القديمة والحديثة
-android.permissions = READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, MANAGE_EXTERNAL_STORAGE, INTERNET
+# الأذونات الكاملة - السطر الأهم لظهور رسالة الموافقة في شاومي
+android.permissions = INTERNET, READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, MANAGE_EXTERNAL_STORAGE, READ_MEDIA_IMAGES
 
 # (int) Target Android API
+# API 33 ضروري ليتعرف أندرويد 13+ على طلب الأذونات
 android.api = 33
 android.minapi = 21
 android.sdk = 33
 android.ndk = 25b
 
 # (list) Android architectures
-# هذا السطر هو المسؤول عن عمل التطبيق على شاومي وسامسونج (64-bit) بجانب Ateto
+# دعم الـ 64 بت لضمان عمله على الأجهزة الحديثة
 android.archs = arm64-v8a, armeabi-v7a
 
 # (bool) allow backup
