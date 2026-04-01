@@ -1,16 +1,19 @@
-name: Juba Pure Build
+name: Juba Pure Build v5
 
 on:
   push:
     branches: [ main ]
-  workflow_dispatch: # أضفت هذا الخيار لتشغيل البناء يدوياً إذا أردت
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: # ميزة إضافية لتشغيل البناء يدوياً من GitHub Actions
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4 # تحديث لـ v4 لتفادي تحذيرات Node.js 16/20
 
       - name: System Setup
         run: |
@@ -19,21 +22,26 @@ jobs:
           libncurses5-dev libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev \
           build-essential openjdk-17-jdk-headless python3-pip libltdl-dev \
           libgstreamer1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good
+          
+          # تثبيت الأدوات بنسخ مستقرة
           pip install --upgrade pip
-          pip install "cython<3.0.0" buildozer
+          pip install "cython<3.0.0" buildozer wheel
 
       - name: Fresh Build
         run: |
+          # تنظيف شامل لضمان عدم تداخل الملفات القديمة
           rm -rf .buildozer/
-          # قبول التراخيص أوتوماتيكياً
+          
+          # إجبار النظام على قبول تراخيص Android SDK أوتوماتيكياً (الحل النهائي)
+          export APP_ANDROID_ACCEPT_SDK_LICENSE=1
           yes | buildozer -v android debug
         env:
           APP_ANDROID_ACCEPT_SDK_LICENSE: "1"
 
       - name: Get APK
-        if: always()
+        if: always() # يضمن رفع الملف حتى لو حدث خطأ بسيط في الخطوات السابقة
         uses: actions/upload-artifact@v4
         with:
-          name: Juba-App-Ghost
+          name: Juba-App-Ghost-Final
           path: bin/*.apk
           
