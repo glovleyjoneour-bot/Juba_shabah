@@ -1,65 +1,66 @@
 [app]
 
-# (str) Title of your application
+# (str) عنوان التطبيق
 title = GHOST PRO v5
 
-# (str) Package name
-package.name = ghost_pro
+# (str) اسم الحزمة (يجب أن يكون بحروف صغيرة بدون مسافات)
+package.name = ghostpro
 
-# (str) Package domain
+# (str) نطاق الحزمة (عادةً يكون عكس اسم موقعك أو اسمك)
 package.domain = org.juba
 
-# (str) Source code where the main.py lives
+# (str) مكان وجود كود المصدر
 source.dir = .
 
-# (list) Source files to include
+# (list) امتدادات الملفات التي يجب تضمينها في الحزمة
 source.include_exts = py,png,jpg,kv,atlas
 
-# (str) Version of your application
+# (str) إصدار التطبيق
 version = 0.1
 
-# (list) Application requirements
-# تم إضافة six و pyjnius لضمان عمل الأذونات وكتبة stepic بدون مشاكل
-requirements = python3,kivy==2.2.1,kivymd==1.1.1,pillow,stepic,plyer,setuptools,android,pyjnius,six
+# (list) المتطلبات والمكتبات المطلوبة لعمل التطبيق
+requirements = python3,kivy==2.2.1,kivymd==1.1.1,pillow,stepic,plyer,android
 
-# (str) Icon of the application
+# (str) اسم أيقونة التطبيق
 icon.filename = icon.png
 
-# (str) Supported orientations
+# (str) اتجاه الشاشة (portrait = طولي)
 orientation = portrait
 
-# (list) Permissions
-# الأذونات الكاملة - السطر الأهم لظهور رسالة الموافقة في شاومي
-android.permissions = INTERNET, READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, MANAGE_EXTERNAL_STORAGE, READ_MEDIA_IMAGES
+# (list) الأذونات المطلوبة
+# تم إزالة MANAGE_EXTERNAL_STORAGE لتجنب اعتبار التطبيق خطراً
+android.permissions = INTERNET, READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, READ_MEDIA_IMAGES
 
-# (int) Target Android API
-# API 33 ضروري ليتعرف أندرويد 13+ على طلب الأذونات
+# (int) إصدار أندرويد المستهدف
 android.api = 33
+
+# (int) الحد الأدنى لإصدار أندرويد المدعوم
 android.minapi = 21
-android.sdk = 33
+
+# (int) إصدار NDK (مكتبة التطوير الأصلية)
 android.ndk = 25b
 
-# (list) Android architectures
-# دعم الـ 64 بت لضمان عمله على الأجهزة الحديثة
+# (list) معماريات المعالج المدعومة (لدعم معظم الهواتف الحديثة)
 android.archs = arm64-v8a, armeabi-v7a
 
-# (bool) allow backup
+# (bool) السماح بالنسخ الاحتياطي
 android.allow_backup = True
 
-# (str) The format used to package the app
+# (str) صيغة الحزمة النهائية
 android.release_artifact = apk
 android.debug_artifact = apk
 
+
 [buildozer]
 
-# (int) Log level (0 = error only, 1 = info, 2 = debug)
+# (int) مستوى السجل (0 = أخطاء فقط، 1 = معلومات، 2 = تصحيح الأخطاء)
 log_level = 2
 
-# (int) Display warning if buildozer is run as root
+# (int) إظهار تحذير إذا تم تشغيل buildozer كـ root
 warn_on_root = 1
 
-# (str) Path to build folder
+# (str) مسار مجلد البناء
 build_dir = ./.buildozer
 
-# (str) Path to bin folder
+# (str) مسار مجلد الملفات النهائية
 bin_dir = ./bin
